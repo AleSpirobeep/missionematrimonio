@@ -1,0 +1,38 @@
+# Tiene sveglio il progetto Supabase gratuito (si mette in pausa dopo 7 giorni senza traffico)
+# e fa da test end-to-end: legge le idee e prova il toggle del cuore con un device fittizio.
+name: Ping Supabase
+
+on:
+  schedule:
+    - cron: "17 8 */3 * *"   # ogni 3 giorni alle 08:17 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    env:
+      SB: https://flnenyxfpfnjkgdspdgu.supabase.co/rest/v1
+      KEY: sb_publishable_DGyu-qcYKH1PngxiAQ0Eeg_EaEYqREF   # chiave pubblica, la stessa del sito
+      DEV: 00000000-0000-4000-8000-00000000c1a0            # device di test, mai un telefono vero
+    steps:
+      - name: Lettura idee e categorie
+        run: |
+          set -euo pipefail
+          n=$(curl -sS --fail -H "apikey: $KEY" "$SB/idee?select=n" | python3 -c 'import sys,json;print(len(json.load(sys.stdin)))')
+          c=$(curl -sS --fail -H "apikey: $KEY" "$SB/categorie?select=nome&order=ordine" | python3 -c 'import sys,json;print(len(json.load(sys.stdin)))')
+          echo "idee: $n  categorie: $c"
+          test "$n" -gt 0 && test "$c" -gt 0
+      - name: Toggle del cuore (salva e poi toglie)
+        run: |
+          set -euo pipefail
+          call() { curl -sS --fail -H "apikey: $KEY" -H "Content-Type: application/json" \
+                     -X POST "$SB/rpc/toggle_salvata" -d "{\"p_idea_n\":75,\"p_device\":\"$DEV\"}"; }
+          a=$(call); b=$(call)
+          echo "primo click: $a, secondo click: $b"
+          test "$a" = "true" && test "$b" = "false"
+      - name: La chiave pubblica non puo' scrivere direttamente
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -H "apikey: $KEY" -H "Content-Type: application/json" \
+                 -X POST "$SB/idee" -d '{"n":9999,"categoria":"Location","idea":"x","url":"x"}')
+          echo "insert diretto: HTTP $code (atteso 401/403)"
+          test "$code" = "401" || test "$code" = "403"
