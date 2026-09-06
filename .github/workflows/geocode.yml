@@ -1,0 +1,50 @@
+# Geocodifica le strutture (Nominatim/OpenStreetMap) e stampa i risultati nei log.
+# Si lancia a mano; le coordinate vengono poi caricate nel database.
+name: Geocodifica strutture
+
+on:
+  workflow_dispatch:
+
+jobs:
+  geocode:
+    runs-on: ubuntu-latest
+    env:
+      SB: https://flnenyxfpfnjkgdspdgu.supabase.co/rest/v1
+      KEY: sb_publishable_DGyu-qcYKH1PngxiAQ0Eeg_EaEYqREF
+    steps:
+      - name: Impronte SRI di Leaflet 1.9.4
+        run: |
+          for f in leaflet.js leaflet.css; do
+            h=$(curl -sSL --fail "https://unpkg.com/leaflet@1.9.4/dist/$f" | openssl dgst -sha256 -binary | base64 -w0)
+            echo "SRI|$f|sha256-$h"
+          done
+      - name: Geocodifica
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request, urllib.parse, os, re
+          SB=os.environ['SB']; KEY=os.environ['KEY']
+          req=urllib.request.Request(f"{SB}/strutture?select=id,nome,indirizzo,comune,provincia&order=id", headers={"apikey":KEY})
+          rows=json.load(urllib.request.urlopen(req))
+          UA="missionematrimonio-geocode/1.0 (sito privato di famiglia; github.com/AleSpirobeep/missionematrimonio)"
+          def nom(q):
+              u="https://nominatim.openstreetmap.org/search?"+urllib.parse.urlencode({"q":q,"format":"jsonv2","limit":1,"countrycodes":"it","addressdetails":1})
+              r=urllib.request.Request(u, headers={"User-Agent":UA})
+              try: return json.load(urllib.request.urlopen(r, timeout=30))
+              except Exception as e: print("ERR|",q,"|",e); return []
+          def clean_addr(a):
+              a=re.split(r'\.\s+(?:Alcuni|Attenzione|ATTENZIONE)', a)[0]
+              a=re.sub(r'\s*-\s*(?:promontorio|localita|loc\.)[^,]*$','',a, flags=re.I)
+              return a
+          for s in rows:
+              nome=re.sub(r'\s*[-–].*$','',s['nome']).strip()
+              tries=[("nome", f"{nome}, {s['comune']}"),
+                     ("indirizzo", clean_addr(s['indirizzo'])),
+                     ("comune", f"{s['comune']} ({s['provincia']})")]
+              for level,q in tries:
+                  res=nom(q); time.sleep(1.1)
+                  if res:
+                      r=res[0]
+                      print(f"GEO|{s['id']}|{level}|{r['lat']}|{r['lon']}|{r.get('type','')}|{r['display_name'][:90]}")
+                  else:
+                      print(f"GEO|{s['id']}|{level}|||nessun risultato|{q[:60]}")
+          PY
