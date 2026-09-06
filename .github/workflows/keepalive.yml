@@ -30,6 +30,15 @@ jobs:
           a=$(call); b=$(call)
           echo "primo click: $a, secondo click: $b"
           test "$a" = "true" && test "$b" = "false"
+      - name: Strutture e PIN
+        run: |
+          set -euo pipefail
+          n=$(curl -sS --fail -H "apikey: $KEY" "$SB/strutture?select=id" | python3 -c 'import sys,json;print(len(json.load(sys.stdin)))')
+          ok=$(curl -sS --fail -H "apikey: $KEY" -H "Content-Type: application/json" -X POST "$SB/rpc/verifica_pin" -d '{"p_pin":"000000"}')
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -H "apikey: $KEY" -H "Content-Type: application/json" -X POST "$SB/rpc/aggiungi_diario" \
+                 -d '{"p_pin":"000000","p_id":1,"p_chi":"test","p_tipo":"nota","p_testo":"x"}')
+          echo "strutture: $n | PIN sbagliato: $ok | scrittura con PIN sbagliato: HTTP $code"
+          test "$n" -gt 0 && test "$ok" = "false" && test "$code" != "200" && test "$code" != "204"
       - name: La chiave pubblica non puo' scrivere direttamente
         run: |
           code=$(curl -sS -o /dev/null -w '%{http_code}' -H "apikey: $KEY" -H "Content-Type: application/json" \

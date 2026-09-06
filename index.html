@@ -19,7 +19,10 @@ body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--sans)
 a{color:var(--cobalt)}
 .wrap{max-width:720px;margin:0 auto;padding:0 18px 80px}
 
-header{padding:36px 0 14px}
+nav.top{display:flex;gap:18px;padding:14px 0 0;font-size:14px}
+nav.top a{color:var(--ink-2);text-decoration:none;padding-bottom:4px;border-bottom:2px solid transparent}
+nav.top a[aria-current]{color:var(--ink);border-color:var(--lemon);font-weight:600}
+header{padding:22px 0 14px}
 header h1{font:600 34px/1.1 var(--serif);margin:0 0 8px;letter-spacing:-.01em}
 header p{margin:0;color:var(--ink-2);max-width:60ch}
 
@@ -90,6 +93,7 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
 </head>
 <body>
 <div class="wrap">
+<nav class="top"><a href="index.html" aria-current="page">Idee</a><a href="strutture.html">Strutture</a></nav>
 <header>
   <h1>Idee per il matrimonio</h1>
   <p>Tutti i video e i caroselli condivisi nel gruppo <em>Missione Matrimonio</em>, riordinati per tema. Tocca una categoria per filtrare, cerca una parola, oppure tocca il cuore per salvare un'idea e ritrovarla dopo.</p>
