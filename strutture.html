@@ -85,7 +85,8 @@ header p{margin:0;color:var(--ink-2);max-width:60ch}
 .diario p{margin:0 0 5px}
 .diario b{color:var(--ink);font-weight:600}
 .diario .tipo{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--cobalt);margin-right:4px}
-.diario .tipo.stato{color:var(--ok)}
+.diario .tipo.stato{color:var(--ok)} .diario .tipo.fascia{color:#8A6D00}
+.fascia.btn{cursor:pointer;border:0;font-family:var(--sans)} .fascia.btn::after{content:" ✎";font-weight:400;opacity:.6}
 .diario .del{border:0;background:transparent;color:var(--grey);cursor:pointer;font-size:14px;padding:0 4px;margin-left:4px}
 .diario .more{border:0;background:transparent;color:var(--cobalt);cursor:pointer;font:600 13px var(--sans);padding:0}
 details{margin-top:8px}
@@ -119,6 +120,10 @@ details .body p b{color:var(--ink)}
 .panel .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .panel .btns button{border:1px solid var(--line);background:var(--paper);color:var(--cobalt);border-radius:8px;padding:10px 14px;font:600 14px var(--sans);cursor:pointer}
 .panel .btns .pri{background:var(--cobalt);color:#fff;border-color:var(--cobalt)}
+.panel .opts{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.panel .opt{display:flex;gap:10px;align-items:baseline;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:14px;color:var(--ink-2);cursor:pointer;margin:0}
+.panel .opt b{color:var(--ink)} .panel .opt input{width:auto;margin:0}
+.panel .opt:has(input:checked){border-color:var(--cobalt);background:var(--cobalt-wash)}
 .panel .err{color:var(--rose);font-size:13px;margin-top:8px;min-height:1em}
 footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-2);font-size:13px}
 @media (prefers-reduced-motion:no-preference){ .chip,.acts a,.acts button{transition:background .12s,color .12s,border-color .12s} }
@@ -179,7 +184,7 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
   };
   var ORDINE_STATI = ['da_contattare','contattata','risposta','preventivo','visita_fissata','visitata','trattativa','scartata','scelta'];
   var IN_CORSO = {contattata:1,risposta:1,preventivo:1,visita_fissata:1,trattativa:1};
-  var TIPI = {nota:'Nota',contatto:'Contatto',visita:'Visita',preventivo:'Preventivo',stato:'Stato'};
+  var TIPI = {nota:'Nota',contatto:'Contatto',visita:'Visita',preventivo:'Preventivo',stato:'Stato',fascia:'Fascia'};
   var FASCE = [[1,'Fascia 1'],[2,'Fascia 2'],[3,'Fascia 3'],[0,'Da assegnare']];
   var FILTRI = [
     ['vicine','≤ 1h da Napoli', function(s){return s.minuti_max!=null && s.minuti_max<=60}],
@@ -261,7 +266,7 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
     var show = tutte? rows : rows.slice(0,3);
     var h=show.map(function(d){
       var t = d.tipo==='stato' ? 'Stato → '+((STATI[d.stato_nuovo]||[d.stato_nuovo])[0]) : TIPI[d.tipo]||d.tipo;
-      return '<p><b>'+esc(dataIT(d.quando))+' · '+esc(d.chi)+'</b> · <span class="tipo '+(d.tipo==='stato'?'stato':'')+'">'+esc(t)+'</span> '+esc(d.testo)
+      return '<p><b>'+esc(dataIT(d.quando))+' · '+esc(d.chi)+'</b> · <span class="tipo '+(d.tipo==='stato'?'stato':d.tipo==='fascia'?'fascia':'')+'">'+esc(t)+'</span> '+esc(d.testo)
         +(hasPin()?'<button type="button" class="del" data-del="'+d.id+'" data-s="'+s.id+'" aria-label="Elimina questa voce">×</button>':'')+'</p>';
     }).join('');
     if(rows.length>3 && !tutte) h+='<button type="button" class="more" data-more="'+s.id+'">Mostra tutte le '+rows.length+' voci</button>';
@@ -270,7 +275,7 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
   function card(s, tutte){
     var fk=fasciaKey(s);
     var nav = s.lat!=null ? 'https://www.google.com/maps/dir/?api=1&destination='+s.lat+','+s.lon : 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.indirizzo.split('.')[0]+', '+s.comune);
-    var acts = '<div class="acts"><button type="button" class="pri" data-stato="'+s.id+'">Aggiorna stato</button><button type="button" data-nota="'+s.id+'">+ Nota / visita</button>'
+    var acts = '<div class="acts"><button type="button" class="pri" data-stato="'+s.id+'">Aggiorna stato</button><button type="button" data-nota="'+s.id+'">+ Nota / visita</button><button type="button" data-fascia="'+s.id+'">Fascia</button>'
       +(s.telefono?'<a href="tel:'+esc(s.telefono)+'">Chiama</a>':'')
       +(s.whatsapp?'<a href="https://wa.me/'+esc(s.whatsapp.replace(/\D/g,''))+'" target="_blank" rel="noopener">WhatsApp</a>':'')
       +(s.email?'<a href="mailto:'+esc(s.email)+'">Email</a>':'')
@@ -278,7 +283,7 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
       +(s.sito?'<a href="'+esc(s.sito.split(' ')[0])+'" target="_blank" rel="noopener">Sito</a>':'')
       +(s.lat!=null?'<button type="button" data-map="'+s.id+'">Mappa</button>':'')+'</div>';
     return '<article class="card f'+fk+'" id="s'+s.id+'">'
-      +'<div class="badges"><span class="fascia f'+fk+'">'+(fk?'FASCIA '+fk:'DA ASSEGNARE')+'</span>'+stato(s)+(s.geo_precisione==='comune'?'<span class="stato" title="Posizione approssimata al comune">posizione ~</span>':'')+'</div>'
+      +'<div class="badges"><button type="button" class="fascia btn f'+fk+'" data-fascia="'+s.id+'" aria-label="Cambia fascia">'+(fk?'FASCIA '+fk:'DA ASSEGNARE')+'</button>'+stato(s)+(s.geo_precisione==='comune'?'<span class="stato" title="Posizione approssimata al comune">posizione ~</span>':'')+'</div>'
       +'<h3>'+esc(s.nome)+'</h3>'
       +'<p class="sub">'+esc(s.zona)+' · '+esc(s.comune)+' ('+esc(s.provincia)+')'+(minuti(s)?' · <b>'+minuti(s)+'</b> da Napoli':'')+'</p>'
       +facts(s)
@@ -316,7 +321,7 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
     var out='', tot=0;
     FASCE.forEach(function(p){
       var rows=S.filter(function(s){return fasciaKey(s)===p[0] && matches(s)}); if(!rows.length) return; tot+=rows.length;
-      var hint = p[0]===0 ? 'Aggiunte dopo la prima selezione: la fascia va ancora decisa.' : '';
+      var hint = p[0]===0 ? 'Aggiunte dopo la prima selezione: tocca "Fascia" sulla scheda per assegnarla.' : '';
       out+='<section class="group"><h2>'+esc(p[1])+'<span>'+rows.length+'</span></h2>'+(hint?'<p class="hint">'+hint+'</p>':'')+rows.map(function(s){return card(s,false)}).join('')+'</section>';
     });
     $('#list').innerHTML = out || '<div class="empty">Nessuna struttura con questi filtri. Prova a toglierne uno.</div>';
@@ -419,6 +424,23 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
         .then(function(){ closePanel(); toast('Salvato nel diario'); return refresh(); }).then(function(){ gotoCard(id); }).catch(fail);
       });
   }
+  function panelFascia(id){
+    var s=S.filter(function(x){return x.id===id})[0]; if(!s) return;
+    var cur = s.fascia==null ? '0' : String(s.fascia);
+    var opts=[['1','Fascia 1','la rosa ristretta (top 5)'],['2','Fascia 2','buone alternative (top 10)'],['3','Fascia 3','da tenere d\'occhio (top 15)'],['0','Da assegnare','fascia ancora da decidere']]
+      .map(function(o){return '<label class="opt"><input type="radio" name="f_fascia" value="'+o[0]+'"'+(o[0]===cur?' checked':'')+'> <b>'+o[1]+'</b> <span>'+o[2]+'</span></label>'}).join('');
+    openPanel('Cambia fascia', s.nome,
+      '<div class="opts">'+opts+'</div>'
+      +'<label for="f_chi2">Chi aggiorna</label><input id="f_chi2" type="text" maxlength="30" value="'+esc(CHI)+'">',
+      function(){
+        var chi=$('#f_chi2').value.trim(); if(!chi){ $('#perr').textContent='Scrivi chi aggiorna.'; return; }
+        var v=$('#pform').querySelector('input[name=f_fascia]:checked'); if(!v){ $('#perr').textContent='Scegli una fascia.'; return; }
+        var nuova = v.value==='0' ? null : +v.value;
+        busy(true); CHI=chi; try{localStorage.setItem('mm:chi',chi)}catch(e){}
+        api('rpc/aggiorna_fascia',{method:'POST',body:{p_pin:PIN,p_id:id,p_fascia:nuova,p_chi:chi}})
+        .then(function(){ closePanel(); toast(nuova?'Spostata in fascia '+nuova:'Fascia rimossa'); return refresh(); }).then(function(){ gotoCard(id); }).catch(fail);
+      });
+  }
   function eliminaVoce(did, sid){
     if(!confirm('Eliminare questa voce del diario?')) return;
     api('rpc/elimina_diario',{method:'POST',body:{p_pin:PIN,p_diario_id:did}}).then(function(){ toast('Voce eliminata'); return refresh(); }).catch(function(err){ var m=String(err&&err.message||err); if(/PIN errato/i.test(m)){ forgetPin(); render(); } toast('Non sono riuscito a eliminare: '+m); });
@@ -426,9 +448,10 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
 
   // ---- Eventi ----
   document.addEventListener('click', function(e){
-    var t=e.target.closest && e.target.closest('[data-stato],[data-nota],[data-map],[data-goto],[data-more],[data-del]'); if(!t) return;
+    var t=e.target.closest && e.target.closest('[data-stato],[data-nota],[data-fascia],[data-map],[data-goto],[data-more],[data-del]'); if(!t) return;
     if(t.hasAttribute('data-stato')) withPin(function(){ panelStato(+t.getAttribute('data-stato')); });
     else if(t.hasAttribute('data-nota')) withPin(function(){ panelNota(+t.getAttribute('data-nota')); });
+    else if(t.hasAttribute('data-fascia')) withPin(function(){ panelFascia(+t.getAttribute('data-fascia')); });
     else if(t.hasAttribute('data-map')) showOnMap(+t.getAttribute('data-map'));
     else if(t.hasAttribute('data-goto')){ map.closePopup(); gotoCard(+t.getAttribute('data-goto')); }
     else if(t.hasAttribute('data-more')) rerenderCard(+t.getAttribute('data-more'), true);
