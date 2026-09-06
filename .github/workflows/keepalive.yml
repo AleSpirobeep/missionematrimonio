@@ -43,6 +43,9 @@ jobs:
         run: |
           set -euo pipefail
           c=$(curl -sS --fail -H "apikey: $KEY" "$SB/costi_categorie?select=id" | python3 -c 'import sys,json;print(len(json.load(sys.stdin)))')
+          for q in 'costi_categorie?select=*&order=ordine' 'costi?select=*&order=creato_il' 'pagamenti?select=*&order=id' 'strutture?select=id,nome,fascia&order=fascia.asc.nullslast,nome'; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' -H "apikey: $KEY" "$SB/$q"); echo "GET $q -> $code"; test "$code" = "200"
+          done
           code=$(curl -sS -o /dev/null -w '%{http_code}' -H "apikey: $KEY" -H "Content-Type: application/json" -X POST "$SB/rpc/categoria_crea" \
                  -d '{"p_pin":"000000","p_nome":"x","p_icona":"x"}')
           echo "categorie: $c | crea categoria con PIN sbagliato: HTTP $code"

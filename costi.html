@@ -198,8 +198,9 @@ footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:v
     });
   }
   function fetchAll(){
-    return Promise.all([api('costi_categorie?select=*&order=ordine'), api('costi?select=*&order=creato_il'), api('pagamenti?select=*&order=coalesce(data_pagamento,scadenza).asc.nullslast,id'), api('strutture?select=id,nome,fascia&order=fascia.asc.nullslast,nome')])
-      .then(function(r){ C=r[0]; X=r[1]; P=r[2]; STR=r[3]; });
+    return Promise.all([api('costi_categorie?select=*&order=ordine'), api('costi?select=*&order=creato_il'), api('pagamenti?select=*&order=id'), api('strutture?select=id,nome,fascia&order=fascia.asc.nullslast,nome')])
+      .then(function(r){ C=r[0]; X=r[1]; STR=r[3];
+        P=r[2].sort(function(a,b){ var da=a.data_pagamento||a.scadenza||'9999', db=b.data_pagamento||b.scadenza||'9999'; return da<db?-1:da>db?1:a.id-b.id; }); });
   }
   function load(){
     $('#list').innerHTML='<div class="state">Carico i costi…</div>';
