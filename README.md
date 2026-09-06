@@ -10,11 +10,12 @@ Raccolta delle idee condivise nel gruppo WhatsApp del matrimonio, pubblicata su 
   stato e diario. Tabelle `strutture` e `strutture_diario`; le modifiche passano da funzioni che verificano
   il PIN di famiglia (hash bcrypt nella tabella `impostazioni`, non leggibile dall'API). Coordinate ottenute
   con `.github/workflows/geocode.yml` (Nominatim) e caricate a mano.
+- **Costi**: `costi.html`, tracker spese per categoria con pagamenti (fatti e in sospeso), totale come somma
+  delle spese, scadenze, esportazione CSV. Tabelle `costi_categorie`, `costi`, `pagamenti`; scritture via
+  funzioni con PIN.
 - **Cuore "Salva"**: anonimo. Ogni telefono si genera un identificativo casuale salvato nel browser;
   la card mostra quante persone hanno salvato l'idea.
 - **Ping**: `.github/workflows/keepalive.yml` interroga il database ogni tre giorni per evitare la pausa
   automatica del piano gratuito, e fa da test end-to-end (lettura, toggle, scrittura negata).
 
-Tabelle predisposte per il seguito: `fornitori` e `costi`.
-
-Pagine: `index.html` (idee) e `strutture.html` (strutture), collegate dal menu in alto.
+Pagine: `index.html` (idee), `strutture.html` (strutture) e `costi.html` (costi), collegate dal menu in alto.

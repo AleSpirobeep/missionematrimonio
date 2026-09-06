@@ -39,6 +39,14 @@ jobs:
                  -d '{"p_pin":"000000","p_id":1,"p_chi":"test","p_tipo":"nota","p_testo":"x"}')
           echo "strutture: $n | PIN sbagliato: $ok | scrittura con PIN sbagliato: HTTP $code"
           test "$n" -gt 0 && test "$ok" = "false" && test "$code" != "200" && test "$code" != "204"
+      - name: Costi
+        run: |
+          set -euo pipefail
+          c=$(curl -sS --fail -H "apikey: $KEY" "$SB/costi_categorie?select=id" | python3 -c 'import sys,json;print(len(json.load(sys.stdin)))')
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -H "apikey: $KEY" -H "Content-Type: application/json" -X POST "$SB/rpc/categoria_crea" \
+                 -d '{"p_pin":"000000","p_nome":"x","p_icona":"x"}')
+          echo "categorie: $c | crea categoria con PIN sbagliato: HTTP $code"
+          test "$c" -gt 0 && test "$code" != "200" && test "$code" != "204"
       - name: La chiave pubblica non puo' scrivere direttamente
         run: |
           code=$(curl -sS -o /dev/null -w '%{http_code}' -H "apikey: $KEY" -H "Content-Type: application/json" \
